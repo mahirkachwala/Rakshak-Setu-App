@@ -1,7 +1,7 @@
 {
   "framework": "vite",
   "functions": {
-    "api/[...path].ts": {
+    "api/[...path].js": {
       "includeFiles": "data/**"
     }
   },
