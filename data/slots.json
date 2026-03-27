@@ -1,0 +1,79 @@
+[
+  {
+    "id": "slot_mn8s6wl6lk1u",
+    "center_id": "1",
+    "center_name": "Primary Health Centre, Koramangala",
+    "date": "2026-03-28",
+    "start_time": "09:00 AM",
+    "end_time": "01:00 PM",
+    "capacity": 30,
+    "booked": 1,
+    "created_at": "2026-03-27T10:51:24.666Z"
+  },
+  {
+    "id": "slot_mn8s6wliv3v9",
+    "center_id": "1",
+    "center_name": "Primary Health Centre, Koramangala",
+    "date": "2026-03-29",
+    "start_time": "10:00 AM",
+    "end_time": "02:00 PM",
+    "capacity": 30,
+    "booked": 0,
+    "created_at": "2026-03-27T10:51:24.678Z"
+  },
+  {
+    "id": "slot_mn8s6wlph72w",
+    "center_id": "1",
+    "center_name": "Primary Health Centre, Koramangala",
+    "date": "2026-03-30",
+    "start_time": "11:00 AM",
+    "end_time": "03:00 PM",
+    "capacity": 30,
+    "booked": 0,
+    "created_at": "2026-03-27T10:51:24.685Z"
+  },
+  {
+    "id": "slot_mn8s6wmuw5id",
+    "center_id": "1",
+    "center_name": "Primary Health Centre, Koramangala",
+    "date": "2026-04-02",
+    "start_time": "12:00 PM",
+    "end_time": "02:00 PM",
+    "capacity": 30,
+    "booked": 1,
+    "created_at": "2026-03-27T10:51:24.726Z"
+  },
+  {
+    "id": "slot_mn8uaqyqqkfx",
+    "center_id": "mum-hosp-2",
+    "center_name": "NAIR HOSPITAL DENTAL COLLEGE",
+    "date": "2026-03-27",
+    "start_time": "09:00 AM",
+    "end_time": "03:00 PM",
+    "capacity": 30,
+    "booked": 1,
+    "created_at": "2026-03-27T11:50:23.234Z"
+  },
+  {
+    "id": "slot_mn8vx0174n2u",
+    "center_id": "mum-hosp-4",
+    "center_name": "Seth G.S.Medical college &KEM Hospital",
+    "date": "2026-03-27",
+    "start_time": "09:00 AM",
+    "end_time": "01:00 PM",
+    "capacity": 30,
+    "booked": 1,
+    "created_at": "2026-03-27T12:35:41.035Z"
+  },
+  {
+    "id": "slot_mn8z0ll1ikgd",
+    "center_id": "csv-new-delhi-28.58529-77.17709",
+    "center_name": "Charak Palika Hospital Ndmc Dh",
+    "date": "2026-03-27",
+    "start_time": "09:00 AM",
+    "end_time": "03:00 PM",
+    "capacity": 30,
+    "booked": 0,
+    "created_at": "2026-03-27T14:02:27.781Z"
+  }
+]

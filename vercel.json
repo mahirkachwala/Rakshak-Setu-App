@@ -1,0 +1,14 @@
+{
+  "framework": "vite",
+  "functions": {
+    "api/[...path].ts": {
+      "includeFiles": "data/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

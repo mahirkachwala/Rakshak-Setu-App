@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+@import "tailwindcss";
+
+/* Enable class-based dark mode (Tailwind v4 requires explicit custom variant) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: 'Roboto', sans-serif;
+  --font-display: 'Google Sans', 'Roboto', sans-serif;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-safe: hsl(var(--safe));
+  --color-warning: hsl(var(--warning));
+  --color-surface: hsl(var(--surface));
+}
+
+:root {
+  /* Material 3 - Light grey app background */
+  --background: 220 17% 97%;
+  --foreground: 222 47% 10%;
+
+  /* Primary: Indigo #4F46E5 */
+  --primary: 243 75% 59%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary: Soft Blue #6366F1 */
+  --secondary: 239 84% 67%;
+  --secondary-foreground: 0 0% 100%;
+
+  /* Muted elements */
+  --muted: 220 14% 92%;
+  --muted-foreground: 220 9% 46%;
+
+  /* Accent: Indigo tint */
+  --accent: 243 75% 96%;
+  --accent-foreground: 243 75% 40%;
+
+  /* Destructive/Error: #EF4444 */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Status Colors - Green ONLY for status indicators */
+  --safe: 142 71% 45%;
+  --warning: 38 92% 50%;
+
+  /* Surface: White */
+  --surface: 0 0% 100%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 10%;
+
+  --border: 220 13% 88%;
+  --ring: 243 75% 59%;
+
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 13%;
+  --card-foreground: 210 40% 98%;
+  --muted: 222 47% 18%;
+  --muted-foreground: 215 20% 65%;
+  --border: 222 47% 20%;
+}
+
+@layer base {
+  body {
+    @apply bg-zinc-100 text-foreground antialiased font-sans;
+    display: flex;
+    justify-content: center;
+  }
+
+  #root {
+    @apply w-full max-w-md bg-background min-h-screen relative shadow-2xl sm:border-x sm:border-border overflow-x-hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply font-bold tracking-tight text-foreground;
+  }
+}
+
+/* Material 3 elevation levels */
+.m3-surface-1 { background: color-mix(in srgb, hsl(243 75% 59%) 5%, white); }
+.m3-surface-2 { background: color-mix(in srgb, hsl(243 75% 59%) 8%, white); }
+.m3-surface-3 { background: color-mix(in srgb, hsl(243 75% 59%) 11%, white); }
+
+/* Material 3 Ripple effect */
+.m3-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.m3-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 150ms;
+}
+.m3-ripple:active::after { opacity: 0.12; }
+.m3-ripple:hover::after { opacity: 0.08; }
+
+/* Custom Scrollbar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Material 3 Chip style */
+.m3-chip {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border;
+}
+
+/* Status dot pulse */
+.status-dot-pulse {
+  animation: pulse-ring 1.5s ease infinite;
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(79, 70, 229, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+}

@@ -1,0 +1,254 @@
+[
+  {
+    "id": 1,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "show vaccine schedule",
+    "created_at": "2026-03-27T04:55:39.852Z"
+  },
+  {
+    "id": 2,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "Here is SARDARJI's vaccine schedule.",
+    "created_at": "2026-03-27T04:55:39.852Z"
+  },
+  {
+    "id": 3,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "I want to book a vaccine appointment",
+    "created_at": "2026-03-27T08:22:51.588Z"
+  },
+  {
+    "id": 4,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "I found a vaccination center for अर्णव कड़े. You can book from the app now.",
+    "created_at": "2026-03-27T08:22:51.588Z"
+  },
+  {
+    "id": 5,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "मदत करू शकते",
+    "created_at": "2026-03-27T08:41:51.377Z"
+  },
+  {
+    "id": 6,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "I can help with vaccine schedules, nearby centers, booking appointments, and fever guidance.",
+    "created_at": "2026-03-27T08:41:51.377Z"
+  },
+  {
+    "id": 7,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "हो गया",
+    "created_at": "2026-03-27T08:54:11.742Z"
+  },
+  {
+    "id": 8,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "I can help with vaccine schedules, nearby centers, booking appointments, and fever guidance.",
+    "created_at": "2026-03-27T08:54:11.742Z"
+  },
+  {
+    "id": 9,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "I want to book a vaccine appointment",
+    "created_at": "2026-03-27T11:11:26.745Z"
+  },
+  {
+    "id": 10,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "I found a vaccination center for अर्णव कड़े. You can book from the app now.",
+    "created_at": "2026-03-27T11:11:26.745Z"
+  },
+  {
+    "id": 11,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "I want to book a vaccine appointment",
+    "created_at": "2026-03-27T11:46:06.088Z"
+  },
+  {
+    "id": 12,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "I found a vaccination center for Gopal Sonune. You can book from the app now.",
+    "created_at": "2026-03-27T11:46:06.088Z"
+  },
+  {
+    "id": 13,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "Show my child's vaccine schedule",
+    "created_at": "2026-03-27T12:33:05.773Z"
+  },
+  {
+    "id": 14,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "Here is Gopal Sonune's vaccine schedule.",
+    "created_at": "2026-03-27T12:33:05.773Z"
+  },
+  {
+    "id": 15,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "Are vaccinations safe for my child?",
+    "created_at": "2026-03-27T13:47:18.157Z"
+  },
+  {
+    "id": 16,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "I can help with vaccine schedules, nearby centers, booking appointments, and fever guidance.",
+    "created_at": "2026-03-27T13:47:18.157Z"
+  },
+  {
+    "id": 17,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "???? ???? ?? ??????? ??????? ????",
+    "created_at": "2026-03-27T16:39:05.134Z"
+  },
+  {
+    "id": 18,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "ਗੋਪਾਲ ਸੋਨੂਨੇ ਦਾ ਅਗਲਾ ਟੀਕਾਕਰਨ 6 ਮਈ 2026 ਨੂੰ ਹੈ। ਇਸ ਵਿੱਚ ਹੈਪੇਟਾਈਟਸ ਬੀ (ਦੂਜੀ ਖੁਰਾਕ), ਆਈਪੀਵੀ (ਪੋਲੀਓ ਵੈਕਸੀਨ, ਪਹਿਲੀ), ਹਿਬ (ਪਹਿਲੀ ਖੁਰਾਕ), ਪੀਸੀਵੀ (ਪਹਿਲੀ ਖੁਰਾਕ) ਅਤੇ ਰੋਟਾਵਾਇਰਸ (ਪਹਿਲੀ ਖੁਰਾਕ) ਸ਼ਾਮਲ ਹਨ।",
+    "created_at": "2026-03-27T16:39:05.134Z"
+  },
+  {
+    "id": 19,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "???? ??????? ???? ??????? ?? ???? ?????, ?? ????",
+    "created_at": "2026-03-27T16:39:23.092Z"
+  },
+  {
+    "id": 20,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "আপনার বাচ্চার জ্বর হয়েছে শুনে আমরা চিন্তিত। জ্বর কমানোর জন্য কিছু প্রাথমিক পদক্ষেপ নিতে পারেন: বাচ্চাকে পর্যাপ্ত পরিমাণে জল বা তরল খাবার দিন, হালকা পোশাক পরান এবং তার শরীরের তাপমাত্রা নিয়মিত পরীক্ষা করুন। যদি জ্বর খুব বেশি হয়, না কমে, বা বাচ্চার অন্য কোনো গুরুতর লক্ষণ দেখা যায়, তাহলে দেরি না করে একজন ডাক্তারের সাথে পরামর্শ করুন।",
+    "created_at": "2026-03-27T16:39:23.092Z"
+  },
+  {
+    "id": 21,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "render by vaccine schedule",
+    "created_at": "2026-03-27T16:43:27.694Z"
+  },
+  {
+    "id": 22,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "नमस्ते! अभिषेक के टीकाकरण का विवरण यहाँ दिया गया है:\n\n**छूटी हुई खुराक:**\n*   ओपीवी 0 (ओरल पोलियो वैक्सीन)\n\n**आगामी खुराक (6 मई, 2026 को देय):**\n*   डीपीटी (पहली खुराक)\n*   हेपेटाइटिस बी (दूसरी खुराक)\n*   आईपीवी (इनएक्टिवेटेड पोलियो वैक्सीन, पहली)\n*   हिब (पहली खुराक)\n*   पीसीवी (पहली खुराक)\n\nकृपया सुनिश्चित करें कि अभिषेक को ये टीके समय पर मिलें।",
+    "created_at": "2026-03-27T16:43:27.694Z"
+  },
+  {
+    "id": 23,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "find the nearest centres",
+    "created_at": "2026-03-27T16:43:50.334Z"
+  },
+  {
+    "id": 24,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "Here are some nearby centers for Abhishek's vaccinations:\n\n1. Primary Health Centre, Koramangala: Free, open 9 AM - 5 PM.\n2. Government District Hospital: Free, open 8 AM - 8 PM.\n3. Apollo Clinic - HSR Layout: Private, ₹500-2000 per vaccine, open 8 AM - 10 PM.\n\nYou can find more details and other centers in the app.",
+    "created_at": "2026-03-27T16:43:50.334Z"
+  },
+  {
+    "id": 25,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "book appointment in government district hospital",
+    "created_at": "2026-03-27T16:44:39.987Z"
+  },
+  {
+    "id": 26,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "Certainly! You can visit the Government District Hospital at Fort Road, Shivajinagar, Bengaluru - 560001. They are open from 8 AM to 8 PM and offer free services. Please visit during these hours for your appointment.",
+    "created_at": "2026-03-27T16:44:39.987Z"
+  },
+  {
+    "id": 27,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "book appointment for 10:30 a.m.",
+    "created_at": "2026-03-27T16:45:22.799Z"
+  },
+  {
+    "id": 28,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "Certainly! To book an appointment for Abhishek at 10:30 a.m., please let me know the date and your preferred centre. His next vaccines are due on May 6, 2026.",
+    "created_at": "2026-03-27T16:45:22.800Z"
+  },
+  {
+    "id": 29,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "નજીકનું કેન્દ્ર શોધો",
+    "created_at": "2026-03-27T16:51:27.374Z"
+  },
+  {
+    "id": 30,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "તમારી નજીકના કેટલાક રસીકરણ કેન્દ્રો અહીં આપેલા છે:\n\n1. **પ્રાથમિક આરોગ્ય કેન્દ્ર, કોરમંગલા:** (સરકારી) અહીં રસીકરણ મફત છે. સવારે 9 થી સાંજે 5 વાગ્યા સુધી ખુલ્લું રહે છે.\n2. **સરકારી જિલ્લા હોસ્પિટલ:** (સરકારી) અહીં રસીકરણ મફત છે. સવારે 8 થી રાત્રે 8 વાગ્યા સુધી ખુલ્લું રહે છે.\n3. **એપોલો ક્લિનિક - HSR લેઆઉટ:** (ખાનગી) અહીં રસીકરણનો ખર્ચ ₹500-2000 પ્રતિ રસી છે. સવારે 8 થી રાત્રે 10 વાગ્યા સુધી ખુલ્લું રહે છે.",
+    "created_at": "2026-03-27T16:51:27.374Z"
+  },
+  {
+    "id": 31,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "Show vaccine schedule",
+    "created_at": "2026-03-27T17:21:49.804Z"
+  },
+  {
+    "id": 32,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "नमस्ते! अभिषेक के टीकाकरण की जानकारी यहाँ दी गई है:\n\nएक टीका छूट गया है: OPV 0 (ओरल पोलियो वैक्सीन)\n\nआगामी टीके (6 मई, 2026 को देय):\n* DPT (पहली खुराक)\n* हेपेटाइटिस B (दूसरी खुराक)\n* IPV (निष्क्रिय पोलियो वैक्सीन, पहली खुराक)\n* Hib (पहली खुराक)\n* PCV (पहली खुराक)\n\nआप छूटे हुए और आगामी टीकों के लिए अपॉइंटमेंट बुक कर सकते हैं।",
+    "created_at": "2026-03-27T17:21:49.805Z"
+  },
+  {
+    "id": 33,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "explain me about bcg vaccine what is it and what are side effects",
+    "created_at": "2026-03-27T19:22:58.519Z"
+  },
+  {
+    "id": 34,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "BCG (Bacillus Calmette-Guérin) vaccine helps protect children from severe forms of tuberculosis (TB). It's typically given shortly after birth.\n\nCommon side effects are usually mild and include redness, swelling, and soreness at the injection site. A small blister or ulcer might form, which usually heals to leave a small scar. These reactions are normal and show the vaccine is working. If you have any concerns, please consult your doctor.",
+    "created_at": "2026-03-27T19:22:58.519Z"
+  },
+  {
+    "id": 35,
+    "conversation_id": 1,
+    "role": "user",
+    "content": "Show my vaccine schedule",
+    "created_at": "2026-03-27T19:44:54.734Z"
+  },
+  {
+    "id": 36,
+    "conversation_id": 1,
+    "role": "ai",
+    "content": "Here is the vaccine schedule for Gopal Sonune.",
+    "created_at": "2026-03-27T19:44:54.734Z"
+  }
+]
