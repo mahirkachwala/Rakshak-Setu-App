@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { getDataFilePath } from "./runtimeData";
+import { getDataFilePath } from "./runtimeData.js";
 
 export type UserRow = {
   id: number;

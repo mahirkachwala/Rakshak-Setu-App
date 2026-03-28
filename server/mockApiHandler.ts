@@ -8,13 +8,13 @@ import {
   getSharedBooking,
   listSharedBookings,
   rescheduleSharedBooking,
-} from "../shared/appointmentWorkflow";
+} from "../shared/appointmentWorkflow.js";
 import {
   fetchHardwareMiddlewareInfo,
   getHardwareMiddlewareConfig,
   lookupHardwareContainerPin,
-} from "../shared/hardwareMiddleware";
-import { getDataFilePath } from "../shared/runtimeData";
+} from "../shared/hardwareMiddleware.js";
+import { getDataFilePath } from "../shared/runtimeData.js";
 
 type UserRow = {
   id: number;

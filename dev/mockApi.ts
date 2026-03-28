@@ -1,5 +1,5 @@
 import type { Plugin } from "vite";
-import { handleApiRequest } from "../server/mockApiHandler";
+import { handleApiRequest } from "../server/mockApiHandler.js";
 
 export function mockApiPlugin(): Plugin {
   return {
