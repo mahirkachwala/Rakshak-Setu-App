@@ -26,12 +26,40 @@ type Message = {
   text: string;
   intent?: AssistantIntent;
   suggestions?: string[];
-  actionData?: {
-    centers?: Array<{ id: string; name: string; address: string; distance?: string; type?: string; cost?: string }>;
-    vaccines?: Array<{ name: string; scheduledDate: string; status: string; ageLabel: string }>;
-    selected_center?: { id: string; name: string; address: string };
-    slot_options?: Array<{ id: string; siteId: string; siteName: string; dateIso: string; dateLabel: string; time: string; capacityLeft: number }>;
-  };
+  actionData?: AssistantActionData;
+};
+
+type AssistantCenterOption = {
+  id: string;
+  name: string;
+  address: string;
+  distance?: string;
+  type?: string;
+  cost?: string;
+};
+
+type AssistantVaccineOption = {
+  name: string;
+  scheduledDate: string;
+  status: string;
+  ageLabel: string;
+};
+
+type AssistantSlotOption = {
+  id: string;
+  siteId: string;
+  siteName: string;
+  dateIso: string;
+  dateLabel: string;
+  time: string;
+  capacityLeft: number;
+};
+
+type AssistantActionData = {
+  centers?: AssistantCenterOption[];
+  vaccines?: AssistantVaccineOption[];
+  selected_center?: { id: string; name: string; address: string };
+  slot_options?: AssistantSlotOption[];
 };
 
 type HealthFacility = BookingFacilityLike & {
@@ -50,7 +78,7 @@ type BookingFlow =
   | { stage: 'idle' }
   | { stage: 'awaiting_location' }
   | { stage: 'awaiting_center'; facilities: HealthFacility[] }
-  | { stage: 'awaiting_slot'; facility: HealthFacility; slots: Message['actionData']['slot_options'] };
+  | { stage: 'awaiting_slot'; facility: HealthFacility; slots: AssistantSlotOption[] };
 
 const BOOKING_TEXT = {
   en: {
@@ -237,7 +265,7 @@ function formatDistance(distanceKm: number) {
 }
 
 function buildSlotOptions(facility: HealthFacility) {
-  const options: NonNullable<Message['actionData']>['slot_options'] = [];
+  const options: AssistantSlotOption[] = [];
   for (const site of generateSessionSites(facility)) {
     for (const slot of Object.values(generateDaySlots(facility.id, site.id))) {
       if (!slot.available) continue;
@@ -264,6 +292,86 @@ function selectIndexFromText(text: string, max: number) {
 
 function containsIndicScript(text: string) {
   return /[\u0900-\u0D7F]/.test(text);
+}
+
+function sanitizeAssistantActionData(value: unknown): AssistantActionData | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+
+  const raw = value as Record<string, unknown>;
+  const centers = Array.isArray(raw.centers)
+    ? raw.centers
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const center = entry as Record<string, unknown>;
+          const id = center.id == null ? '' : String(center.id);
+          const name = typeof center.name === 'string' ? center.name : '';
+          const address = typeof center.address === 'string' ? center.address : '';
+          if (!id || !name || !address) return null;
+          return {
+            id,
+            name,
+            address,
+            distance: typeof center.distance === 'string' ? center.distance : undefined,
+            type: typeof center.type === 'string' ? center.type : undefined,
+            cost: typeof center.cost === 'string' ? center.cost : undefined,
+          };
+        })
+        .filter((entry): entry is AssistantCenterOption => Boolean(entry))
+    : undefined;
+
+  const vaccines = Array.isArray(raw.vaccines)
+    ? raw.vaccines
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const vaccine = entry as Record<string, unknown>;
+          const name = typeof vaccine.name === 'string' ? vaccine.name : '';
+          const scheduledDate = typeof vaccine.scheduledDate === 'string' ? vaccine.scheduledDate : '';
+          const status = typeof vaccine.status === 'string' ? vaccine.status : '';
+          const ageLabel = typeof vaccine.ageLabel === 'string' ? vaccine.ageLabel : '';
+          if (!name || !scheduledDate) return null;
+          return { name, scheduledDate, status, ageLabel };
+        })
+        .filter((entry): entry is AssistantVaccineOption => Boolean(entry))
+    : undefined;
+
+  const slotOptions = Array.isArray(raw.slot_options)
+    ? raw.slot_options
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const slot = entry as Record<string, unknown>;
+          const id = slot.id == null ? '' : String(slot.id);
+          const siteId = slot.siteId == null ? '' : String(slot.siteId);
+          const siteName = typeof slot.siteName === 'string' ? slot.siteName : '';
+          const dateIso = typeof slot.dateIso === 'string' ? slot.dateIso : '';
+          const dateLabel = typeof slot.dateLabel === 'string' ? slot.dateLabel : '';
+          const time = typeof slot.time === 'string' ? slot.time : '';
+          const capacityLeft = typeof slot.capacityLeft === 'number' ? slot.capacityLeft : 0;
+          if (!id || !siteId || !siteName || !dateIso || !dateLabel || !time) return null;
+          return { id, siteId, siteName, dateIso, dateLabel, time, capacityLeft };
+        })
+        .filter((entry): entry is AssistantSlotOption => Boolean(entry))
+    : undefined;
+
+  const selectedCenter = raw.selected_center && typeof raw.selected_center === 'object'
+    ? (() => {
+        const center = raw.selected_center as Record<string, unknown>;
+        const id = center.id == null ? '' : String(center.id);
+        const name = typeof center.name === 'string' ? center.name : '';
+        const address = typeof center.address === 'string' ? center.address : '';
+        return id && name && address ? { id, name, address } : undefined;
+      })()
+    : undefined;
+
+  if (!centers && !vaccines && !slotOptions && !selectedCenter) {
+    return undefined;
+  }
+
+  return {
+    centers,
+    vaccines,
+    selected_center: selectedCenter,
+    slot_options: slotOptions,
+  };
 }
 
 export default function SwasthyaSewaChatPanel({ className }: { className?: string }) {
@@ -304,9 +412,10 @@ export default function SwasthyaSewaChatPanel({ className }: { className?: strin
   }, []);
 
   const appendAssistant = useCallback((text: string, extra: Partial<Message> = {}, autoListen = false) => {
-    setMessages((current) => [...current, { id: createId(), role: 'assistant', text, ...extra }]);
-    speak(text, autoListen);
-  }, [speak]);
+    const safeText = typeof text === 'string' && text.trim() ? text : introText;
+    setMessages((current) => [...current, { id: createId(), role: 'assistant', text: safeText, ...extra }]);
+    speak(safeText, autoListen);
+  }, [introText, speak]);
 
   const appendUser = useCallback((text: string) => {
     setMessages((current) => [...current, { id: createId(), role: 'user', text }]);
@@ -325,7 +434,7 @@ export default function SwasthyaSewaChatPanel({ className }: { className?: strin
     return promise;
   }, [dataset]);
 
-  const openBooking = useCallback((facility: HealthFacility, slot: NonNullable<Message['actionData']>['slot_options'][number]) => {
+  const openBooking = useCallback((facility: HealthFacility, slot: AssistantSlotOption) => {
     setBookingFlow({ stage: 'idle' });
     setBookingFacility(facility);
     setBookingSelection({ siteId: slot.siteId, dateIso: slot.dateIso });
@@ -383,7 +492,7 @@ export default function SwasthyaSewaChatPanel({ className }: { className?: strin
           .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity))
           .slice(0, 5);
         setBookingFlow({ stage: 'awaiting_center', facilities });
-        appendAssistant(BOOKING_TEXT.chooseHospital, {
+        appendAssistant(bookingUi.chooseHospital, {
           intent: 'BOOK_APPOINTMENT',
           actionData: {
             centers: facilities.map((facility) => ({
@@ -462,7 +571,7 @@ export default function SwasthyaSewaChatPanel({ className }: { className?: strin
         text: safeMessage || englishFallback.message,
         intent: data.intent,
         suggestions: safeSuggestions,
-        actionData: data.action_data,
+        actionData: sanitizeAssistantActionData(data.action_data),
       }]);
       speak(safeMessage || englishFallback.message, false);
     } catch {

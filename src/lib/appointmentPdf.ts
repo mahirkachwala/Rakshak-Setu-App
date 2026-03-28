@@ -178,22 +178,62 @@ function baseDocument(booking: LiveBooking, kind: PdfKind, replacement?: LiveBoo
   return doc;
 }
 
+function savePdfDocument(doc: jsPDF, filename: string) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    doc.save(filename);
+    return;
+  }
+
+  try {
+    const blob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = blobUrl;
+    link.download = filename;
+    link.rel = 'noopener noreferrer';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
+    const isStandalone =
+      window.matchMedia?.('(display-mode: standalone)').matches
+      || navigatorWithStandalone.standalone === true;
+    const isIOS = /iPad|iPhone|iPod/i.test(window.navigator.userAgent);
+
+    if (isStandalone || isIOS) {
+      const popup = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      if (!popup) {
+        window.location.assign(blobUrl);
+      }
+    }
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+    }, 60000);
+  } catch {
+    doc.save(filename);
+  }
+}
+
 export function downloadAppointmentSlip(booking: LiveBooking) {
   const doc = baseDocument(booking, 'appointment');
-  doc.save(`Appointment_${booking.referenceId}.pdf`);
+  savePdfDocument(doc, `Appointment_${booking.referenceId}.pdf`);
 }
 
 export function downloadCancellationSlip(booking: LiveBooking) {
   const doc = baseDocument(booking, 'cancellation');
-  doc.save(`Cancellation_${booking.referenceId}.pdf`);
+  savePdfDocument(doc, `Cancellation_${booking.referenceId}.pdf`);
 }
 
 export function downloadRescheduleSlip(booking: LiveBooking, replacement?: LiveBooking) {
   const doc = baseDocument(booking, 'reschedule', replacement);
-  doc.save(`Reschedule_${booking.referenceId}.pdf`);
+  savePdfDocument(doc, `Reschedule_${booking.referenceId}.pdf`);
 }
 
 export function downloadVaccinationCertificate(booking: LiveBooking) {
   const doc = baseDocument(booking, 'certificate');
-  doc.save(`Vaccination_Certificate_${booking.referenceId}.pdf`);
+  savePdfDocument(doc, `Vaccination_Certificate_${booking.referenceId}.pdf`);
 }
