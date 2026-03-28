@@ -146,6 +146,21 @@ const EDGE_TTS_VOICES: Record<string, string> = {
   "or-IN": EDGE_TTS_MULTILINGUAL_FALLBACK,
   "od-IN": EDGE_TTS_MULTILINGUAL_FALLBACK,
 };
+const GOOGLE_TTS_LANGUAGE_CODES: Record<string, string> = {
+  "en-IN": "en",
+  "hi-IN": "hi",
+  "mr-IN": "mr",
+  "bn-IN": "bn",
+  "ta-IN": "ta",
+  "te-IN": "te",
+  "gu-IN": "gu",
+  "kn-IN": "kn",
+  "ml-IN": "ml",
+  "pa-IN": "pa",
+  "as-IN": "as",
+  "or-IN": "or",
+  "od-IN": "or",
+};
 
 function readJsonArray<T>(filePath: string): T[] {
   if (!existsSync(filePath)) return [];
@@ -166,6 +181,81 @@ function writeJsonArray(filePath: string, rows: unknown[]): void {
 function getEdgeTtsVoice(languageCode: string | undefined): string {
   if (!languageCode) return EDGE_TTS_VOICES["en-IN"];
   return EDGE_TTS_VOICES[languageCode] ?? EDGE_TTS_VOICES[`${languageCode.slice(0, 2)}-IN`] ?? EDGE_TTS_MULTILINGUAL_FALLBACK;
+}
+
+function getGoogleTtsLanguage(languageCode: string | undefined): string {
+  if (!languageCode) return "en";
+  return GOOGLE_TTS_LANGUAGE_CODES[languageCode] ?? languageCode.slice(0, 2).toLowerCase() ?? "en";
+}
+
+function splitTtsText(text: string, maxLength = 180): string[] {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return [];
+
+  const parts = normalized.split(/(?<=[.!?।])\s+/).filter(Boolean);
+  const chunks: string[] = [];
+  let current = "";
+
+  for (const part of parts) {
+    if (part.length > maxLength) {
+      if (current) {
+        chunks.push(current);
+        current = "";
+      }
+
+      let cursor = 0;
+      while (cursor < part.length) {
+        chunks.push(part.slice(cursor, cursor + maxLength).trim());
+        cursor += maxLength;
+      }
+      continue;
+    }
+
+    const candidate = current ? `${current} ${part}` : part;
+    if (candidate.length <= maxLength) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) chunks.push(current);
+    current = part;
+  }
+
+  if (current) chunks.push(current);
+  return chunks.slice(0, 10);
+}
+
+async function synthesizeGoogleTranslateTts(text: string, languageCode: string | undefined): Promise<Buffer | null> {
+  const chunks = splitTtsText(text);
+  if (!chunks.length) return null;
+
+  const tl = getGoogleTtsLanguage(languageCode);
+  const buffers: Buffer[] = [];
+
+  try {
+    for (const chunk of chunks) {
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(tl)}&q=${encodeURIComponent(chunk)}`;
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0",
+          Accept: "audio/mpeg,*/*",
+        },
+      });
+
+      if (!response.ok) {
+        return buffers.length ? Buffer.concat(buffers) : null;
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      if (arrayBuffer.byteLength > 0) {
+        buffers.push(Buffer.from(arrayBuffer));
+      }
+    }
+
+    return buffers.length ? Buffer.concat(buffers) : null;
+  } catch {
+    return buffers.length ? Buffer.concat(buffers) : null;
+  }
 }
 
 async function synthesizeEdgeTts(text: string, languageCode: string | undefined): Promise<Buffer | null> {
@@ -782,21 +872,31 @@ export async function handleApiRequest(req: NodeLikeRequest, res: NodeLikeRespon
   const method = (req.method ?? "GET").toUpperCase();
   const db = readDb();
 
-        if (method === "POST" && pathname === "/api/voice/tts") {
-          const body = (await parseBody(req)) as Partial<{
-            text: string;
-            languageCode: string;
-            rate: number;
-          }>;
+        if ((method === "POST" || method === "GET") && pathname === "/api/voice/tts") {
+          const searchText = url?.searchParams.get("text")?.trim();
+          const searchLanguageCode = url?.searchParams.get("languageCode")?.trim();
+          const searchRate = url?.searchParams.get("rate");
+          const body = method === "POST"
+            ? (await parseBody(req)) as Partial<{
+                text: string;
+                languageCode: string;
+                rate: number;
+              }>
+            : {};
 
-          if (!body.text?.trim()) {
+          const text = searchText || body.text?.trim() || "";
+          if (!text) {
             sendJson(res, { error: "Text is required" }, 400);
             return;
           }
 
-          const text = body.text.trim();
-          const languageCode = body.languageCode || "en-IN";
-          const rate = typeof body.rate === "number" && body.rate > 0 ? body.rate : 1;
+          const languageCode = searchLanguageCode || body.languageCode || "en-IN";
+          const parsedSearchRate = searchRate ? Number(searchRate) : undefined;
+          const rate = typeof parsedSearchRate === "number" && parsedSearchRate > 0
+            ? parsedSearchRate
+            : typeof body.rate === "number" && body.rate > 0
+              ? body.rate
+              : 1;
 
           if (SARVAM_API_KEY) {
             try {
@@ -838,6 +938,15 @@ export async function handleApiRequest(req: NodeLikeRequest, res: NodeLikeRespon
             res.setHeader("Content-Type", "audio/mpeg");
             res.setHeader("Cache-Control", "no-store");
             res.end(edgeAudio);
+            return;
+          }
+
+          const googleAudio = await synthesizeGoogleTranslateTts(text, languageCode);
+          if (googleAudio) {
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "audio/mpeg");
+            res.setHeader("Cache-Control", "no-store");
+            res.end(googleAudio);
             return;
           }
 

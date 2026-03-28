@@ -379,15 +379,12 @@ export async function fetchSarvamAudio(text: string, language: Language, rate = 
   if (!clean) return null;
 
   try {
-    const response = await fetch('/api/voice/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: clean,
-        languageCode: getSarvamLanguage(language),
-        rate,
-      }),
+    const params = new URLSearchParams({
+      text: clean,
+      languageCode: getSarvamLanguage(language),
+      rate: String(rate),
     });
+    const response = await fetch(`/api/voice/tts?${params.toString()}`);
 
     if (!response.ok) return null;
     const contentType = response.headers.get('Content-Type') ?? '';
