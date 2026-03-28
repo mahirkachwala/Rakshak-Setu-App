@@ -1,11 +1,19 @@
 {
   "framework": "vite",
   "functions": {
-    "api/[...path].js": {
+    "api/handler.js": {
       "includeFiles": "data/**"
     }
   },
   "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api/handler"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/handler?__path=$1"
+    },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
