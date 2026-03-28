@@ -178,17 +178,88 @@ function baseDocument(booking: LiveBooking, kind: PdfKind, replacement?: LiveBoo
   return doc;
 }
 
-function savePdfDocument(doc: jsPDF, filename: string) {
+type ShareNavigator = Navigator & {
+  canShare?: (data: { files?: File[] }) => boolean;
+  share?: (data: { files?: File[]; title?: string; text?: string }) => Promise<void>;
+  msSaveOrOpenBlob?: (blob: Blob, defaultName?: string) => boolean;
+};
+
+type SaveWindow = Window & {
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string;
+    types?: Array<{
+      description?: string;
+      accept: Record<string, string[]>;
+    }>;
+  }) => Promise<{
+    createWritable: () => Promise<{
+      write: (data: Blob) => Promise<void>;
+      close: () => Promise<void>;
+    }>;
+  }>;
+};
+
+async function savePdfDocument(doc: jsPDF, filename: string) {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     doc.save(filename);
     return;
   }
 
+  const appWindow = window as SaveWindow;
+  const appNavigator = window.navigator as ShareNavigator & { standalone?: boolean };
+  const isIOS = /iPad|iPhone|iPod/i.test(window.navigator.userAgent);
+  const isAndroid = /Android/i.test(window.navigator.userAgent);
+  const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || appNavigator.standalone === true;
+  const shouldPreopenPreview = isIOS || isAndroid || isStandalone;
+  const previewWindow = shouldPreopenPreview ? window.open('', '_blank') : null;
+
   try {
     const blob = doc.output('blob');
+    const file = new File([blob], filename, { type: 'application/pdf' });
+
+    if (appNavigator.msSaveOrOpenBlob) {
+      appNavigator.msSaveOrOpenBlob(blob, filename);
+      previewWindow?.close();
+      return;
+    }
+
+    if (appWindow.showSaveFilePicker) {
+      try {
+        const handle = await appWindow.showSaveFilePicker({
+          suggestedName: filename,
+          types: [
+            {
+              description: 'PDF Document',
+              accept: { 'application/pdf': ['.pdf'] },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        previewWindow?.close();
+        return;
+      } catch {
+        // Fall through to the download and preview fallbacks below.
+      }
+    }
+
+    if (appNavigator.share && appNavigator.canShare?.({ files: [file] })) {
+      try {
+        await appNavigator.share({
+          files: [file],
+          title: filename,
+          text: 'Raksha Setu PDF document',
+        });
+        previewWindow?.close();
+        return;
+      } catch {
+        // Fall through to the direct download and preview fallback below.
+      }
+    }
+
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
-
     link.href = blobUrl;
     link.download = filename;
     link.rel = 'noopener noreferrer';
@@ -197,43 +268,43 @@ function savePdfDocument(doc: jsPDF, filename: string) {
     link.click();
     document.body.removeChild(link);
 
-    const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
-    const isStandalone =
-      window.matchMedia?.('(display-mode: standalone)').matches
-      || navigatorWithStandalone.standalone === true;
-    const isIOS = /iPad|iPhone|iPod/i.test(window.navigator.userAgent);
-
-    if (isStandalone || isIOS) {
-      const popup = window.open(blobUrl, '_blank', 'noopener,noreferrer');
-      if (!popup) {
-        window.location.assign(blobUrl);
+    if (previewWindow) {
+      try {
+        previewWindow.location.href = blobUrl;
+      } catch {
+        previewWindow.close();
+        const popup = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+        if (!popup) {
+          window.location.assign(blobUrl);
+        }
       }
     }
 
     window.setTimeout(() => {
       URL.revokeObjectURL(blobUrl);
-    }, 60000);
+    }, 120000);
   } catch {
+    previewWindow?.close();
     doc.save(filename);
   }
 }
 
 export function downloadAppointmentSlip(booking: LiveBooking) {
   const doc = baseDocument(booking, 'appointment');
-  savePdfDocument(doc, `Appointment_${booking.referenceId}.pdf`);
+  void savePdfDocument(doc, `Appointment_${booking.referenceId}.pdf`);
 }
 
 export function downloadCancellationSlip(booking: LiveBooking) {
   const doc = baseDocument(booking, 'cancellation');
-  savePdfDocument(doc, `Cancellation_${booking.referenceId}.pdf`);
+  void savePdfDocument(doc, `Cancellation_${booking.referenceId}.pdf`);
 }
 
 export function downloadRescheduleSlip(booking: LiveBooking, replacement?: LiveBooking) {
   const doc = baseDocument(booking, 'reschedule', replacement);
-  savePdfDocument(doc, `Reschedule_${booking.referenceId}.pdf`);
+  void savePdfDocument(doc, `Reschedule_${booking.referenceId}.pdf`);
 }
 
 export function downloadVaccinationCertificate(booking: LiveBooking) {
   const doc = baseDocument(booking, 'certificate');
-  savePdfDocument(doc, `Vaccination_Certificate_${booking.referenceId}.pdf`);
+  void savePdfDocument(doc, `Vaccination_Certificate_${booking.referenceId}.pdf`);
 }
