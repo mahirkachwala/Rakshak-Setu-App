@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/store';
 import {
-  captureSpeechWithBrowser,
+  captureSpeech,
   fetchSarvamAudio,
   registerSpeechAudio,
   speakWithBrowser,
@@ -399,7 +399,7 @@ const SwasthyaSewaGuide = forwardRef<SwasthyaSewaGuideHandle, SwasthyaSewaGuideP
     if (!silent) setVoiceError('');
     setIsListening(true);
     try {
-      const transcript = await captureSpeechWithBrowser(language);
+      const transcript = await captureSpeech(language);
       if (!isMounted.current || listeningToken.current !== token) return;
       setLastTranscript(transcript);
       if (transcript) {

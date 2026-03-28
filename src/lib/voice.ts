@@ -13,6 +13,7 @@ type SpeechRecognitionLike = {
 };
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+type MediaRecorderCtor = typeof MediaRecorder;
 
 const VOICE_INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart'] as const;
 const voiceInteractionWaiters = new Set<(ready: boolean) => void>();
@@ -151,6 +152,23 @@ function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
   }).SpeechRecognition
     ?? (window as typeof window & { webkitSpeechRecognition?: SpeechRecognitionCtor }).webkitSpeechRecognition;
   return candidate ?? null;
+}
+
+function getMediaRecorderCtor(): MediaRecorderCtor | null {
+  if (typeof window === 'undefined') return null;
+  return typeof window.MediaRecorder !== 'undefined' ? window.MediaRecorder : null;
+}
+
+function shouldPreferRecorderCapture(): boolean {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+
+  const displayModeStandalone = typeof window.matchMedia === 'function'
+    && window.matchMedia('(display-mode: standalone)').matches;
+  const iosStandalone = Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  const userAgent = navigator.userAgent?.toLowerCase() ?? '';
+  const androidWebView = /\bwv\b/.test(userAgent) || userAgent.includes('; wv');
+
+  return displayModeStandalone || iosStandalone || androidWebView;
 }
 
 function hasVoiceInteraction(): boolean {
@@ -395,6 +413,219 @@ export async function fetchSarvamAudio(text: string, language: Language, rate = 
   }
 }
 
+function getPreferredRecordingMimeType(): string {
+  const Recorder = getMediaRecorderCtor();
+  if (!Recorder?.isTypeSupported) return '';
+
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+  ];
+
+  return candidates.find((mimeType) => Recorder.isTypeSupported(mimeType)) ?? '';
+}
+
+function normalizeRecordedMimeType(mimeType: string): string {
+  const base = mimeType.split(';')[0]?.trim().toLowerCase();
+  switch (base) {
+    case 'audio/webm':
+    case 'audio/mp4':
+    case 'audio/ogg':
+    case 'audio/wav':
+    case 'audio/mpeg':
+      return base;
+    default:
+      return 'audio/webm';
+  }
+}
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+
+  return btoa(binary);
+}
+
+async function transcribeSpeechWithServer(blob: Blob, language: Language, mimeType: string): Promise<string> {
+  const response = await fetch('/api/voice/stt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      audioBase64: await blobToBase64(blob),
+      mimeType: normalizeRecordedMimeType(mimeType),
+      languageCode: getSarvamLanguage(language),
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Speech transcription is unavailable right now.');
+  }
+
+  const payload = await response.json() as { transcript?: string };
+  const transcript = payload.transcript?.trim() ?? '';
+  if (!transcript) {
+    throw new Error('Speech recognition ended without a transcript.');
+  }
+
+  return transcript;
+}
+
+async function captureSpeechWithRecorder(language: Language): Promise<string> {
+  const Recorder = getMediaRecorderCtor();
+  if (
+    typeof navigator === 'undefined'
+    || !navigator.mediaDevices?.getUserMedia
+    || !Recorder
+  ) {
+    throw new Error('Speech recording is not available in this browser.');
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      channelCount: 1,
+    },
+  });
+
+  const mimeType = getPreferredRecordingMimeType();
+  const recorder = mimeType ? new Recorder(stream, { mimeType }) : new Recorder(stream);
+  const chunks: BlobPart[] = [];
+  const AudioContextCtor = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  const audioContext = AudioContextCtor ? new AudioContextCtor() : null;
+  const analyser = audioContext ? audioContext.createAnalyser() : null;
+  const source = audioContext ? audioContext.createMediaStreamSource(stream) : null;
+  const waveform = analyser ? new Uint8Array(analyser.fftSize) : null;
+  let rafId = 0;
+  let heardVoice = false;
+  let silenceSince = 0;
+  let stopped = false;
+
+  if (analyser && source) {
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.25;
+    source.connect(analyser);
+  }
+
+  const cleanup = async () => {
+    if (rafId) {
+      window.cancelAnimationFrame(rafId);
+    }
+    stream.getTracks().forEach((track) => track.stop());
+    if (source) {
+      try {
+        source.disconnect();
+      } catch {
+        // Ignore disconnect failures.
+      }
+    }
+    if (analyser) {
+      try {
+        analyser.disconnect();
+      } catch {
+        // Ignore disconnect failures.
+      }
+    }
+    if (audioContext) {
+      try {
+        await audioContext.close();
+      } catch {
+        // Ignore close failures.
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    if (stopped) return;
+    stopped = true;
+    if (recorder.state !== 'inactive') {
+      recorder.stop();
+    }
+  };
+
+  if (analyser && waveform) {
+    const monitor = () => {
+      if (stopped) return;
+      analyser.getByteTimeDomainData(waveform);
+      let sumSquares = 0;
+      for (const sample of waveform) {
+        const centered = (sample - 128) / 128;
+        sumSquares += centered * centered;
+      }
+      const rms = Math.sqrt(sumSquares / waveform.length);
+      const now = Date.now();
+
+      if (rms > 0.035) {
+        heardVoice = true;
+        silenceSince = 0;
+      } else if (heardVoice) {
+        if (!silenceSince) silenceSince = now;
+        if (now - silenceSince > 1200) {
+          stopRecording();
+          return;
+        }
+      }
+
+      rafId = window.requestAnimationFrame(monitor);
+    };
+
+    rafId = window.requestAnimationFrame(monitor);
+  }
+
+  const hardTimeout = window.setTimeout(() => {
+    stopRecording();
+  }, 9000);
+
+  return new Promise((resolve, reject) => {
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+
+    recorder.onerror = async () => {
+      window.clearTimeout(hardTimeout);
+      await cleanup();
+      reject(new Error('Speech recording failed.'));
+    };
+
+    recorder.onstop = async () => {
+      window.clearTimeout(hardTimeout);
+      await cleanup();
+
+      if (!chunks.length) {
+        reject(new Error('Speech recognition ended without a transcript.'));
+        return;
+      }
+
+      try {
+        const recordedBlob = new Blob(chunks, {
+          type: recorder.mimeType || mimeType || 'audio/webm',
+        });
+        const transcript = await transcribeSpeechWithServer(
+          recordedBlob,
+          language,
+          recorder.mimeType || mimeType || 'audio/webm',
+        );
+        resolve(transcript);
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error('Speech transcription failed.'));
+      }
+    };
+
+    recorder.start(250);
+  });
+}
+
 export function captureSpeechWithBrowser(language: Language): Promise<string> {
   const Recognition = getSpeechRecognitionCtor();
   if (!Recognition) {
@@ -437,6 +668,22 @@ export function captureSpeechWithBrowser(language: Language): Promise<string> {
     };
     recognition.start();
   });
+}
+
+export async function captureSpeech(language: Language): Promise<string> {
+  if (shouldPreferRecorderCapture()) {
+    try {
+      return await captureSpeechWithRecorder(language);
+    } catch {
+      return captureSpeechWithBrowser(language);
+    }
+  }
+
+  try {
+    return await captureSpeechWithBrowser(language);
+  } catch {
+    return captureSpeechWithRecorder(language);
+  }
 }
 
 export function normalizeIndicDigits(value: string): string {

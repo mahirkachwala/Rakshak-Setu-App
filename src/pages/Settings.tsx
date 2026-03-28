@@ -29,6 +29,61 @@ import SwasthyaSewaGuide from '@/components/SwasthyaSewaGuide';
 import { getVoiceFieldError, getVoicePrompt } from '@/lib/voicePrompts';
 import { matchGenderFromSpeech, parseSpokenDate, toTitleCase } from '@/lib/voice';
 
+const SETTINGS_TEXT: Record<Language, {
+  abhaBody: string;
+  notificationsBody: string;
+  vaccinationSub: string;
+  healthCardSub: string;
+  pmjaySub: string;
+  rbskSub: string;
+  jsySub: string;
+  missionSub: string;
+  privacySub: string;
+  helpSub: string;
+  setUp: string;
+  footerVersion: string;
+  footerMission: string;
+  footerData: string;
+  signOut: string;
+}> = {
+  en: { abhaBody: 'Create your 14-digit Ayushman Bharat Health ID', notificationsBody: 'Push notifications for due dates', vaccinationSub: 'Download all vaccination history', healthCardSub: 'Digital immunization card', pmjaySub: 'Ayushman Bharat · ₹5L/year coverage', rbskSub: 'Free child health screening 0–18 years', jsySub: 'Maternity benefit scheme', missionSub: 'Universal immunization programme', privacySub: 'How we protect your data', helpSub: 'Common questions answered', setUp: 'Set Up', footerVersion: 'Version 1.0.0 · Made for India', footerMission: 'Built on Ayushman Bharat Digital Mission (ABDM)', footerData: 'Data powered by NHA · NIC · Government of India', signOut: 'Sign Out' },
+  hi: { abhaBody: 'अपनी 14 अंकों की आयुष्मान भारत हेल्थ आईडी बनाएं', notificationsBody: 'देय तारीखों के लिए पुश सूचनाएँ', vaccinationSub: 'सभी टीकाकरण रिकॉर्ड डाउनलोड करें', healthCardSub: 'डिजिटल टीकाकरण कार्ड', pmjaySub: 'आयुष्मान भारत · ₹5 लाख/वर्ष कवरेज', rbskSub: '0–18 वर्ष के बच्चों की निःशुल्क जांच', jsySub: 'मातृत्व लाभ योजना', missionSub: 'सार्वभौमिक टीकाकरण कार्यक्रम', privacySub: 'हम आपका डेटा कैसे सुरक्षित रखते हैं', helpSub: 'सामान्य प्रश्नों के उत्तर', setUp: 'सेट अप', footerVersion: 'संस्करण 1.0.0 · भारत के लिए', footerMission: 'आयुष्मान भारत डिजिटल मिशन (ABDM) पर आधारित', footerData: 'डेटा: NHA · NIC · भारत सरकार', signOut: 'साइन आउट' },
+  mr: { abhaBody: 'तुमची 14 अंकी आयुष्मान भारत हेल्थ आयडी तयार करा', notificationsBody: 'देय तारखांसाठी पुश सूचना', vaccinationSub: 'सर्व लसीकरण इतिहास डाउनलोड करा', healthCardSub: 'डिजिटल लसीकरण कार्ड', pmjaySub: 'आयुष्मान भारत · ₹5 लाख/वर्ष संरक्षण', rbskSub: '0–18 वर्षांसाठी मोफत आरोग्य तपासणी', jsySub: 'मातृत्व लाभ योजना', missionSub: 'सार्वत्रिक लसीकरण कार्यक्रम', privacySub: 'आम्ही तुमचा डेटा कसा सुरक्षित ठेवतो', helpSub: 'सामान्य प्रश्नांची उत्तरे', setUp: 'सेट अप', footerVersion: 'आवृत्ती 1.0.0 · भारतासाठी', footerMission: 'आयुष्मान भारत डिजिटल मिशन (ABDM) वर आधारित', footerData: 'डेटा: NHA · NIC · भारत सरकार', signOut: 'साइन आउट' },
+  bn: { abhaBody: 'আপনার ১৪ অঙ্কের আয়ুষ্মান ভারত হেলথ আইডি তৈরি করুন', notificationsBody: 'ডিউ তারিখের জন্য পুশ নোটিফিকেশন', vaccinationSub: 'সব টিকাকরণ ইতিহাস ডাউনলোড করুন', healthCardSub: 'ডিজিটাল টিকাকরণ কার্ড', pmjaySub: 'আয়ুষ্মান ভারত · ₹5 লাখ/বছর কভারেজ', rbskSub: '০–১৮ বছরের শিশুদের বিনামূল্যে স্ক্রিনিং', jsySub: 'মাতৃত্ব সহায়তা প্রকল্প', missionSub: 'সর্বজনীন টিকাকরণ কর্মসূচি', privacySub: 'আমরা কীভাবে আপনার তথ্য সুরক্ষিত রাখি', helpSub: 'সাধারণ প্রশ্নের উত্তর', setUp: 'সেট আপ', footerVersion: 'সংস্করণ 1.0.0 · ভারতের জন্য', footerMission: 'আয়ুষ্মান ভারত ডিজিটাল মিশন (ABDM)-এ নির্মিত', footerData: 'তথ্য: NHA · NIC · ভারত সরকার', signOut: 'সাইন আউট' },
+  te: { abhaBody: 'మీ 14 అంకెల ఆయుష్మాన్ భారత్ హెల్త్ ఐడి సృష్టించండి', notificationsBody: 'గడువు తేదీలకు పుష్ నోటిఫికేషన్లు', vaccinationSub: 'అన్ని టీకా చరిత్రను డౌన్‌లోడ్ చేయండి', healthCardSub: 'డిజిటల్ ఇమ్యునైజేషన్ కార్డ్', pmjaySub: 'ఆయుష్మాన్ భారత్ · ₹5 లక్షలు/సంవత్సరం కవరేజ్', rbskSub: '0–18 ఏళ్ల పిల్లలకు ఉచిత స్క్రీనింగ్', jsySub: 'మాతృత్వ ప్రయోజన పథకం', missionSub: 'సర్వత్ర టీకాకరణ కార్యక్రమం', privacySub: 'మీ డేటాను మేము ఎలా రక్షిస్తున్నాం', helpSub: 'సాధారణ ప్రశ్నలకు సమాధానాలు', setUp: 'సెట్ అప్', footerVersion: 'వెర్షన్ 1.0.0 · భారతదేశం కోసం', footerMission: 'ఆయుష్మాన్ భారత్ డిజిటల్ మిషన్ (ABDM) ఆధారంగా', footerData: 'డేటా: NHA · NIC · భారత ప్రభుత్వం', signOut: 'సైన్ అవుట్' },
+  ta: { abhaBody: 'உங்கள் 14 இலக்க ஆயுஷ்மான் பாரத் ஹெல்த் ஐடியை உருவாக்குங்கள்', notificationsBody: 'காலக்கெடு தேதிகளுக்கான புஷ் அறிவிப்புகள்', vaccinationSub: 'அனைத்து தடுப்பூசி வரலாறையும் பதிவிறக்கவும்', healthCardSub: 'டிஜிட்டல் தடுப்பூசி அட்டை', pmjaySub: 'ஆயுஷ்மான் பாரத் · ₹5 லட்சம்/ஆண்டு கவரேஜ்', rbskSub: '0–18 வயது குழந்தைகளுக்கு இலவச பரிசோதனை', jsySub: 'தாய்மை நலத் திட்டம்', missionSub: 'சார்வత్ర தடுப்பூசி திட்டம்', privacySub: 'உங்கள் தரவை எப்படிப் பாதுகாக்கிறோம்', helpSub: 'பொது கேள்விகளுக்கான பதில்கள்', setUp: 'அமைக்கவும்', footerVersion: 'பதிப்பு 1.0.0 · இந்தியாவிற்காக', footerMission: 'ஆயுஷ்மான் பாரத் டிஜிட்டல் மிஷன் (ABDM) அடிப்படையில்', footerData: 'தரவு: NHA · NIC · இந்திய அரசு', signOut: 'வெளியேறு' },
+  kn: { abhaBody: 'ನಿಮ್ಮ 14 ಅಂಕೆಯ ಆಯುಷ್ಮಾನ್ ಭಾರತ್ ಹೆಲ್ತ್ ಐಡಿ ರಚಿಸಿ', notificationsBody: 'ಗಡುವು ದಿನಾಂಕಗಳಿಗೆ ಪುಶ್ ಸೂಚನೆಗಳು', vaccinationSub: 'ಎಲ್ಲಾ ಲಸಿಕೆ ಇತಿಹಾಸ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ', healthCardSub: 'ಡಿಜಿಟಲ್ ಲಸಿಕೆ ಕಾರ್ಡ್', pmjaySub: 'ಆಯುಷ್ಮಾನ್ ಭಾರತ್ · ₹5 ಲಕ್ಷ/ವರ್ಷ ಕವರೆಜ್', rbskSub: '0–18 ವರ್ಷದ ಮಕ್ಕಳಿಗೆ ಉಚಿತ ತಪಾಸಣೆ', jsySub: 'ಮಾತೃತ್ವ ಲಾಭ ಯೋಜನೆ', missionSub: 'ಸರ್ವತ್ರ ಲಸಿಕಾಕರಣ ಕಾರ್ಯಕ್ರಮ', privacySub: 'ನಿಮ್ಮ ಡೇಟಾವನ್ನು ನಾವು ಹೇಗೆ ರಕ್ಷಿಸುತ್ತೇವೆ', helpSub: 'ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು', setUp: 'ಸೆಟ್ ಅಪ್', footerVersion: 'ಆವೃತ್ತಿ 1.0.0 · ಭಾರತದಿಗಾಗಿ', footerMission: 'ಆಯುಷ್ಮಾನ್ ಭಾರತ್ ಡಿಜಿಟಲ್ ಮಿಷನ್ (ABDM) ಆಧಾರಿತ', footerData: 'ಡೇಟಾ: NHA · NIC · ಭಾರತ ಸರ್ಕಾರ', signOut: 'ಸೈನ್ ಔಟ್' },
+  gu: { abhaBody: 'તમારી 14 અંકની આયુષ્માન ભારત હેલ્થ આઈડી બનાવો', notificationsBody: 'નિયત તારીખો માટે પુશ સૂચનાઓ', vaccinationSub: 'બધો ટીકાકરણ ઇતિહાસ ડાઉનલોડ કરો', healthCardSub: 'ડિજિટલ રસીકરણ કાર્ડ', pmjaySub: 'આયુષ્માન ભારત · ₹5 લાખ/વર્ષ કવરેજ', rbskSub: '0–18 વર્ષ માટે મફત તપાસ', jsySub: 'માતૃત્વ લાભ યોજના', missionSub: 'સાર્વત્રિક રસીકરણ કાર્યક્રમ', privacySub: 'અમે તમારો ડેટા કેવી રીતે સુરક્ષિત રાખીએ છીએ', helpSub: 'સામાન્ય પ્રશ્નોના જવાબ', setUp: 'સેટ અપ', footerVersion: 'વર્ઝન 1.0.0 · ભારત માટે', footerMission: 'આયુષ્માન ભારત ડિજિટલ મિશન (ABDM) આધારિત', footerData: 'ડેટા: NHA · NIC · ભારત સરકાર', signOut: 'સાઇન આઉટ' },
+  ml: { abhaBody: 'നിങ്ങളുടെ 14 അക്ക ആയുഷ്മാൻ ഭാരത് ഹെൽത്ത് ഐഡി സൃഷ്ടിക്കുക', notificationsBody: 'ഡ്യൂ തീയതികൾക്കായുള്ള പുഷ് അറിയിപ്പുകൾ', vaccinationSub: 'എല്ലാ വാക്സിൻ ചരിത്രവും ഡൗൺലോഡ് ചെയ്യുക', healthCardSub: 'ഡിജിറ്റൽ ഇമ്യൂണൈസേഷൻ കാർഡ്', pmjaySub: 'ആയുഷ്മാൻ ഭാരത് · ₹5 ലക്ഷം/വർഷം കവർേജ്', rbskSub: '0–18 വയസ്സുകാരുടെ സൗജന്യ പരിശോധന', jsySub: 'മാതൃത്വ લાભ പദ്ധതി', missionSub: 'സർവത്ര വാക്സിനേഷൻ പദ്ധതി', privacySub: 'നിങ്ങളുടെ ഡാറ്റ ഞങ്ങൾ എങ്ങനെ സംരക്ഷിക്കുന്നു', helpSub: 'സാധാരണ ചോദ്യങ്ങൾക്ക് ഉത്തരങ്ങൾ', setUp: 'സെറ്റ് അപ്പ്', footerVersion: 'പതിപ്പ് 1.0.0 · ഇന്ത്യയ്ക്കായി', footerMission: 'ആയുഷ്മാൻ ഭാരത് ഡിജിറ്റൽ മിഷൻ (ABDM) അടിസ്ഥാനമാക്കി', footerData: 'ഡാറ്റ: NHA · NIC · ഇന്ത്യ സർക്കാർ', signOut: 'സൈൻ ഔട്ട്' },
+  pa: { abhaBody: 'ਆਪਣੀ 14 ਅੰਕਾਂ ਦੀ ਆਯੁਸ਼ਮਾਨ ਭਾਰਤ ਹੈਲਥ ਆਈਡੀ ਬਣਾਓ', notificationsBody: 'ਡਿਊ ਮਿਤੀਆਂ ਲਈ ਪੁਸ਼ ਸੁਚਨਾਵਾਂ', vaccinationSub: 'ਸਾਰਾ ਟੀਕਾਕਰਨ ਇਤਿਹਾਸ ਡਾਊਨਲੋਡ ਕਰੋ', healthCardSub: 'ਡਿਜ਼ਿਟਲ ਟੀਕਾਕਰਨ ਕਾਰਡ', pmjaySub: 'ਆਯੁਸ਼ਮਾਨ ਭਾਰਤ · ₹5 ਲੱਖ/ਸਾਲ ਕਵਰੇਜ', rbskSub: '0–18 ਸਾਲ ਲਈ ਮੁਫ਼ਤ ਜਾਂਚ', jsySub: 'ਮਾਤ੍ਰਤਵ ਲਾਭ ਯੋਜਨਾ', missionSub: 'ਸਰਵ ਭਾਰਤੀ ਟੀਕਾਕਰਨ ਪ੍ਰੋਗਰਾਮ', privacySub: 'ਅਸੀਂ ਤੁਹਾਡਾ ਡਾਟਾ ਕਿਵੇਂ ਸੁਰੱਖਿਅਤ ਰੱਖਦੇ ਹਾਂ', helpSub: 'ਆਮ ਸਵਾਲਾਂ ਦੇ ਜਵਾਬ', setUp: 'ਸੈਟ ਅਪ', footerVersion: 'ਵਰਜਨ 1.0.0 · ਭਾਰਤ ਲਈ', footerMission: 'ਆਯੁਸ਼ਮਾਨ ਭਾਰਤ ਡਿਜ਼ਿਟਲ ਮਿਸ਼ਨ (ABDM) ਤੇ ਆਧਾਰਿਤ', footerData: 'ਡਾਟਾ: NHA · NIC · ਭਾਰਤ ਸਰਕਾਰ', signOut: 'ਸਾਈਨ ਆਉਟ' },
+  or: { abhaBody: 'ଆପଣଙ୍କ 14 ଅଙ୍କର ଆୟୁଷ୍ମାନ ଭାରତ ହେଲ୍ଥ ଆଇଡି ତିଆରି କରନ୍ତୁ', notificationsBody: 'ଦେୟ ତାରିଖ ପାଇଁ ପୁଶ ସୂଚନା', vaccinationSub: 'ସମସ୍ତ ଟିକା ଇତିହାସ ଡାଉନଲୋଡ କରନ୍ତୁ', healthCardSub: 'ଡିଜିଟାଲ ଟିକାକରଣ କାର୍ଡ', pmjaySub: 'ଆୟୁଷ୍ମାନ ଭାରତ · ₹5 ଲକ୍ଷ/ବର୍ଷ କଭରେଜ୍', rbskSub: '0–18 ବର୍ଷ ପାଇଁ ନି:ଶୁଳ୍କ ସ୍କ୍ରିନିଂ', jsySub: 'ମାତୃତ୍ୱ ଲାଭ ଯୋଜନା', missionSub: 'ସାର୍ବଭୌମ ଟିକାକରଣ କାର୍ଯ୍ୟକ୍ରମ', privacySub: 'ଆମେ ଆପଣଙ୍କ ତଥ୍ୟ କେମିତି ସୁରକ୍ଷିତ ରଖୁଛୁ', helpSub: 'ସାଧାରଣ ପ୍ରଶ୍ନର ଉତ୍ତର', setUp: 'ସେଟ୍ ଅପ୍', footerVersion: 'ସଂସ୍କରଣ 1.0.0 · ଭାରତ ପାଇଁ', footerMission: 'ଆୟୁଷ୍ମାନ ଭାରତ ଡିଜିଟାଲ ମିଶନ (ABDM) ଉପରେ ଆଧାରିତ', footerData: 'ଡାଟା: NHA · NIC · ଭାରତ ସରକାର', signOut: 'ସାଇନ୍ ଆଉଟ୍' },
+  as: { abhaBody: 'আপোনাৰ 14 সংখ্যাৰ আয়ুষ্মান ভাৰত হেল্থ আইডি তৈয়াৰ কৰক', notificationsBody: 'ডিউ তাৰিখৰ বাবে পুশ জাননী', vaccinationSub: 'সকলো টিকাকৰণ ইতিহাস ডাউনলোড কৰক', healthCardSub: 'ডিজিটেল টিকাকৰণ কাৰ্ড', pmjaySub: 'আয়ুষ্মান ভাৰত · ₹5 লাখ/বছৰ কভাৰেজ', rbskSub: '0–18 বছৰৰ বাবে বিনামূলীয়া স্ক্ৰিনিং', jsySub: 'মাতৃত্ব লাভ আঁচনি', missionSub: 'সৰ্বজনীন টিকাকৰণ কাৰ্যসূচী', privacySub: 'আমি আপোনাৰ ডাটা কেনেকৈ সুৰক্ষিত ৰাখোঁ', helpSub: 'সাধাৰণ প্ৰশ্নৰ উত্তৰ', setUp: 'ছেট আপ', footerVersion: 'সংস্কৰণ 1.0.0 · ভাৰতৰ বাবে', footerMission: 'আয়ুষ্মান ভাৰত ডিজিটেল মিছন (ABDM)ৰ ওপৰত ভিত্তি কৰি', footerData: 'ডাটা: NHA · NIC · ভাৰত চৰকাৰ', signOut: 'চাইন আউট' },
+};
+
+const SETTINGS_VISIBLE_TEXT: Record<Language, {
+  vaccinationRecords: string;
+  healthCard: string;
+  privacy: string;
+  help: string;
+  recordsSummary: string;
+  healthCardSummary: string;
+  viewSchedule: string;
+  openAbha: string;
+}> = {
+  en: { vaccinationRecords: 'Vaccination Records', healthCard: 'Health Card', privacy: 'Data Privacy', help: 'Help & FAQ', recordsSummary: 'All linked child records stay available in Schedule for quick download and review.', healthCardSummary: 'Link ABHA to unlock a digital immunization card accepted at public health facilities.', viewSchedule: 'Open Schedule', openAbha: 'Open ABHA' },
+  hi: { vaccinationRecords: 'टीकाकरण रिकॉर्ड', healthCard: 'हेल्थ कार्ड', privacy: 'डेटा गोपनीयता', help: 'सहायता और प्रश्न', recordsSummary: 'जुड़े हुए सभी बच्चों के रिकॉर्ड शेड्यूल में सुरक्षित रहते हैं और वहीं से डाउनलोड किए जा सकते हैं।', healthCardSummary: 'सार्वजनिक स्वास्थ्य केंद्रों में मान्य डिजिटल टीकाकरण कार्ड के लिए ABHA लिंक करें।', viewSchedule: 'शेड्यूल खोलें', openAbha: 'ABHA खोलें' },
+  mr: { vaccinationRecords: 'लसीकरण नोंदी', healthCard: 'हेल्थ कार्ड', privacy: 'डेटा गोपनीयता', help: 'मदत आणि प्रश्न', recordsSummary: 'जोडलेल्या मुलांच्या सर्व नोंदी शेड्यूलमध्ये सुरक्षित आहेत आणि तिथून डाउनलोड करता येतात.', healthCardSummary: 'सार्वजनिक आरोग्य सुविधांसाठी मान्य डिजिटल लसीकरण कार्ड मिळवण्यासाठी ABHA जोडा.', viewSchedule: 'शेड्यूल उघडा', openAbha: 'ABHA उघडा' },
+  bn: { vaccinationRecords: 'টিকাকরণ রেকর্ড', healthCard: 'হেলথ কার্ড', privacy: 'ডেটা গোপনীয়তা', help: 'সহায়তা ও প্রশ্ন', recordsSummary: 'সংযুক্ত সব শিশুর রেকর্ড শিডিউলে সুরক্ষিত থাকে এবং সেখান থেকে ডাউনলোড করা যায়।', healthCardSummary: 'সরকারি স্বাস্থ্যকেন্দ্রে গ্রহণযোগ্য ডিজিটাল টিকাকরণ কার্ডের জন্য ABHA লিঙ্ক করুন।', viewSchedule: 'শিডিউল খুলুন', openAbha: 'ABHA খুলুন' },
+  te: { vaccinationRecords: 'టీకా రికార్డులు', healthCard: 'హెల్త్ కార్డ్', privacy: 'డేటా గోప్యత', help: 'సహాయం మరియు ప్రశ్నలు', recordsSummary: 'లింక్ చేసిన పిల్లల రికార్డులు అన్నీ షెడ్యూల్‌లో సురక్షితంగా ఉంటాయి మరియు అక్కడి నుంచే డౌన్‌లోడ్ చేయవచ్చు.', healthCardSummary: 'ప్రభుత్వ ఆరోగ్య కేంద్రాల్లో ఉపయోగించే డిజిటల్ ఇమ్యూనైజేషన్ కార్డ్ కోసం ABHAను లింక్ చేయండి.', viewSchedule: 'షెడ్యూల్ తెరవండి', openAbha: 'ABHA తెరవండి' },
+  ta: { vaccinationRecords: 'தடுப்பூசி பதிவுகள்', healthCard: 'ஹெல்த் கார்டு', privacy: 'தரவு தனியுரிமை', help: 'உதவி மற்றும் கேள்விகள்', recordsSummary: 'இணைக்கப்பட்ட அனைத்து குழந்தை பதிவுகளும் ஷெட்யூலில் பாதுகாப்பாக இருக்கும்; அங்கிருந்து பதிவிறக்கலாம்.', healthCardSummary: 'அரசு சுகாதார மையங்களில் ஏற்றுக்கொள்ளப்படும் டிஜிட்டல் தடுப்பூசி அட்டைக்காக ABHA-வை இணைக்கவும்.', viewSchedule: 'ஷெட்யூல் திறக்க', openAbha: 'ABHA திறக்க' },
+  kn: { vaccinationRecords: 'ಲಸಿಕೆ ದಾಖಲೆಗಳು', healthCard: 'ಆರೋಗ್ಯ ಕಾರ್ಡ್', privacy: 'ಡೇಟಾ ಗೌಪ್ಯತೆ', help: 'ಸಹಾಯ ಮತ್ತು ಪ್ರಶ್ನೆಗಳು', recordsSummary: 'ಲಿಂಕ್ ಮಾಡಿದ ಮಕ್ಕಳ ಎಲ್ಲಾ ದಾಖಲೆಗಳು ವೇಳಾಪಟ್ಟಿಯಲ್ಲಿ ಸುರಕ್ಷಿತವಾಗಿರುತ್ತವೆ ಮತ್ತು ಅಲ್ಲಿ നിന്ന് ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು.', healthCardSummary: 'ಸಾರ್ವಜನಿಕ ಆರೋಗ್ಯ ಕೇಂದ್ರಗಳಲ್ಲಿ ಮಾನ್ಯ ಡಿಜಿಟಲ್ ಲಸಿಕೆ ಕಾರ್ಡ್‌ಗಾಗಿ ABHA ಅನ್ನು ಲಿಂಕ್ ಮಾಡಿ.', viewSchedule: 'ವೇಳಾಪಟ್ಟಿ ತೆರೆಯಿರಿ', openAbha: 'ABHA ತೆರೆಯಿರಿ' },
+  gu: { vaccinationRecords: 'ટીકાકરણ રેકોર્ડ', healthCard: 'હેલ્થ કાર્ડ', privacy: 'ડેટા ગોપનીયતા', help: 'મદદ અને પ્રશ્નો', recordsSummary: 'જોડાયેલા તમામ બાળકોના રેકોર્ડ શેડ્યૂલમાં સુરક્ષિત રહે છે અને ત્યાંથી ડાઉનલોડ કરી શકાય છે.', healthCardSummary: 'સરકારી આરોગ્ય કેન્દ્રોમાં માન્ય ડિજિટલ રસીકરણ કાર્ડ માટે ABHA લિંક કરો.', viewSchedule: 'શેડ્યૂલ ખોલો', openAbha: 'ABHA ખોલો' },
+  ml: { vaccinationRecords: 'വാക്സിനേഷൻ രേഖകൾ', healthCard: 'ഹെൽത്ത് കാർഡ്', privacy: 'ഡാറ്റാ സ്വകാര്യത', help: 'സഹായവും ചോദ്യങ്ങളും', recordsSummary: 'ലിങ്ക് ചെയ്ത എല്ലാ കുട്ടികളുടെ രേഖകളും ഷെഡ്യൂളിൽ സുരക്ഷിതമായി നിലനിൽക്കും, അവിടെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം.', healthCardSummary: 'പൊതു ആരോഗ്യ കേന്ദ്രങ്ങളിൽ ഉപയോഗിക്കാവുന്ന ഡിജിറ്റൽ പ്രതിരോധ കാർഡിനായി ABHA ബന്ധിപ്പിക്കുക.', viewSchedule: 'ഷെഡ്യൂൾ തുറക്കുക', openAbha: 'ABHA തുറക്കുക' },
+  pa: { vaccinationRecords: 'ਟੀਕਾਕਰਨ ਰਿਕਾਰਡ', healthCard: 'ਹੈਲਥ ਕਾਰਡ', privacy: 'ਡਾਟਾ ਗੋਪਨੀਯਤਾ', help: 'ਮਦਦ ਅਤੇ ਸਵਾਲ', recordsSummary: 'ਜੁੜੇ ਹੋਏ ਸਾਰੇ ਬੱਚਿਆਂ ਦੇ ਰਿਕਾਰਡ ਸ਼ਡਿਊਲ ਵਿੱਚ ਸੁਰੱਖਿਅਤ ਰਹਿੰਦੇ ਹਨ ਅਤੇ ਓਥੋਂ ਡਾਊਨਲੋਡ ਕੀਤੇ ਜਾ ਸਕਦੇ ਹਨ।', healthCardSummary: 'ਸਰਕਾਰੀ ਸਿਹਤ ਕੇਂਦਰਾਂ ਵਿੱਚ ਮੰਨਿਆ ਜਾਣ ਵਾਲਾ ਡਿਜ਼ਿਟਲ ਟੀਕਾਕਰਨ ਕਾਰਡ ਲਈ ABHA ਲਿੰਕ ਕਰੋ।', viewSchedule: 'ਸ਼ਡਿਊਲ ਖੋਲ੍ਹੋ', openAbha: 'ABHA ਖੋਲ੍ਹੋ' },
+  or: { vaccinationRecords: 'ଟିକାକରଣ ରେକର୍ଡ', healthCard: 'ହେଲ୍ଥ କାର୍ଡ', privacy: 'ତଥ୍ୟ ଗୋପନୀୟତା', help: 'ସହାୟତା ଓ ପ୍ରଶ୍ନ', recordsSummary: 'ଲିଙ୍କ ହୋଇଥିବା ସମସ୍ତ ଶିଶୁ ରେକର୍ଡ ଶେଡ୍ୟୁଲରେ ସୁରକ୍ଷିତ ରହେ ଏବଂ ସେଠାରୁ ଡାଉନଲୋଡ୍ କରିହେବ।', healthCardSummary: 'ସରକାରୀ ସ୍ୱାସ୍ଥ୍ୟ କେନ୍ଦ୍ର ପାଇଁ ମାନ୍ୟ ଡିଜିଟାଲ ଟିକାକରଣ କାର୍ଡ ଖୋଲିବାକୁ ABHA ଲିଙ୍କ କରନ୍ତୁ।', viewSchedule: 'ଶେଡ୍ୟୁଲ ଖୋଲନ୍ତୁ', openAbha: 'ABHA ଖୋଲନ୍ତୁ' },
+  as: { vaccinationRecords: 'টিকাকৰণ ৰেকৰ্ড', healthCard: 'হেল্থ কাৰ্ড', privacy: 'ডাটা গোপনীয়তা', help: 'সহায় আৰু প্ৰশ্ন', recordsSummary: 'লিংক কৰা সকলো শিশুৰ ৰেকৰ্ড শিডিউলত সুৰক্ষিত থাকে আৰু তাতেই ডাউনলোড কৰিব পাৰি।', healthCardSummary: 'চৰকাৰী স্বাস্থ্য কেন্দ্ৰত মান্য ডিজিটেল টিকাকৰণ কাৰ্ডৰ বাবে ABHA লিংক কৰক।', viewSchedule: 'শিডিউল খোলক', openAbha: 'ABHA খোলক' },
+};
+
 function AddChildModal({ onClose }: { onClose: () => void }) {
   const { t, language } = useTranslation();
   const [name, setName] = useState('');
@@ -157,6 +212,8 @@ function InfoModal({ title, children, onClose }: { title: string; children: Reac
 export default function Settings() {
   const { t } = useTranslation();
   const language = useAppStore(state => state.language);
+  const ui = SETTINGS_TEXT[language] ?? SETTINGS_TEXT.en;
+  const visible = SETTINGS_VISIBLE_TEXT[language] ?? SETTINGS_VISIBLE_TEXT.en;
   const setLanguage = useAppStore(state => state.setLanguage);
   const darkMode = useAppStore(state => state.darkMode);
   const toggleDarkMode = useAppStore(state => state.toggleDarkMode);
@@ -231,31 +288,31 @@ export default function Settings() {
       {showAddChild && <AddChildModal onClose={() => setShowAddChild(false)} />}
 
       {activeModal === 'vaccination-records' && (
-        <InfoModal title="Vaccination Records" onClose={() => setActiveModal(null)}>
+        <InfoModal title={visible.vaccinationRecords} onClose={() => setActiveModal(null)}>
           <div className="space-y-3">
             <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-3 border border-blue-100 dark:border-blue-900">
-              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">Your Records</p>
-              <p className="text-xs text-blue-600 dark:text-blue-400">All vaccination records for linked children are stored securely. Visit the Schedule page to view and download individual records for each child.</p>
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">{visible.vaccinationRecords}</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">{visible.recordsSummary}</p>
             </div>
             <button onClick={() => { setActiveModal(null); navigate('/schedule'); }}
               className="w-full h-10 bg-blue-600 text-white rounded-xl text-sm font-bold">
-              View in Schedule →
+              {visible.viewSchedule} →
             </button>
           </div>
         </InfoModal>
       )}
 
       {activeModal === 'health-card' && (
-        <InfoModal title="Digital Health Card" onClose={() => setActiveModal(null)}>
+        <InfoModal title={visible.healthCard} onClose={() => setActiveModal(null)}>
           <div className="space-y-3">
             <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 border border-green-200 dark:border-green-900 text-center">
               <p className="text-4xl mb-2">🏥</p>
-              <p className="text-sm font-bold text-green-800 dark:text-green-300">Universal Immunization Card</p>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">Link your ABHA Health ID to get a digital immunization card recognised at all government health facilities.</p>
+              <p className="text-sm font-bold text-green-800 dark:text-green-300">{visible.healthCard}</p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">{visible.healthCardSummary}</p>
             </div>
             <button onClick={() => { setActiveModal(null); navigate('/abha'); }}
               className="w-full h-10 bg-green-600 text-white rounded-xl text-sm font-bold">
-              Set Up ABHA Health ID →
+              {visible.openAbha} →
             </button>
           </div>
         </InfoModal>
@@ -268,13 +325,8 @@ export default function Settings() {
               <p className="font-bold text-amber-800 dark:text-amber-300 text-base mb-1">🏥 Ayushman Bharat PM-JAY</p>
               <p className="text-xs">Provides health coverage up to ₹5 lakh per family per year for secondary and tertiary hospitalisation.</p>
             </div>
-            <div className="space-y-2">
-              {['Free treatment at empanelled hospitals', 'Covers 1,400+ medical packages', 'No cap on family size', 'Cashless and paperless', 'Available across India'].map(f => (
-                <div key={f} className="flex items-center gap-2">
-                  <CheckCircle size={14} className="text-green-500 shrink-0" />
-                  <span className="text-xs">{f}</span>
-                </div>
-              ))}
+            <div className="rounded-xl border border-amber-100 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/20 px-3 py-3">
+              <p className="text-xs leading-relaxed">{ui.pmjaySub}</p>
             </div>
             <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center">Helpline: 14555 · pmjay.gov.in</p>
           </div>
@@ -339,11 +391,11 @@ export default function Settings() {
       )}
 
       {activeModal === 'privacy' && (
-        <InfoModal title="Data Privacy" onClose={() => setActiveModal(null)}>
+        <InfoModal title={visible.privacy} onClose={() => setActiveModal(null)}>
           <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 border border-green-100 dark:border-green-900 text-center">
               <Lock size={32} className="text-green-600 mx-auto mb-2" />
-              <p className="font-bold text-green-800 dark:text-green-300">Your Data is Secure</p>
+              <p className="font-bold text-green-800 dark:text-green-300">{visible.privacy}</p>
             </div>
             <div className="space-y-2">
               {['Data stored on Indian servers (NIC)', 'Aadhaar verified identity', 'ABDM compliant data standards', 'No data sold to third parties', 'DPDP Act 2023 compliant', 'End-to-end encrypted transfers'].map(f => (
@@ -358,7 +410,7 @@ export default function Settings() {
       )}
 
       {activeModal === 'help' && (
-        <InfoModal title="Help & FAQ" onClose={() => setActiveModal(null)}>
+        <InfoModal title={visible.help} onClose={() => setActiveModal(null)}>
           <div className="space-y-3">
             {[
               { q: 'How do I add a child?', a: 'Go to My Family → Add Child. Enter name, date of birth and gender. The schedule is auto-generated.' },
@@ -551,10 +603,10 @@ export default function Settings() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">ABHA Health Account</p>
-                <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-1.5 py-0.5 rounded-full">Set Up</span>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">ABHA</p>
+                <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-1.5 py-0.5 rounded-full">{ui.setUp}</span>
               </div>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500">Create your 14-digit Ayushman Bharat Health ID</p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">{ui.abhaBody}</p>
             </div>
             <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
           </div>
@@ -636,7 +688,7 @@ export default function Settings() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('vaccineReminders')}</p>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500">Push notifications for due dates</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500">{ui.notificationsBody}</p>
               </div>
             </div>
             <Switch checked={notifs} onCheckedChange={(value) => { setNotifs(value); void persistProfile({ notificationsEnabled: value }); }} />
@@ -673,8 +725,8 @@ export default function Settings() {
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
           <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3.5 pt-3 pb-1">{t('healthRecords')}</p>
           {[
-            { icon: FileText, label: 'Vaccination Records', sub: 'Download all vaccination history', color: 'bg-blue-50 dark:bg-blue-950/40', ic: 'text-blue-600 dark:text-blue-400', modal: 'vaccination-records' },
-            { icon: Shield, label: 'Health Card', sub: 'Digital immunization card', color: 'bg-green-50 dark:bg-green-950/40', ic: 'text-green-600 dark:text-green-400', modal: 'health-card' },
+            { icon: FileText, label: visible.vaccinationRecords, sub: ui.vaccinationSub, color: 'bg-blue-50 dark:bg-blue-950/40', ic: 'text-blue-600 dark:text-blue-400', modal: 'vaccination-records' },
+            { icon: Shield, label: visible.healthCard, sub: ui.healthCardSub, color: 'bg-green-50 dark:bg-green-950/40', ic: 'text-green-600 dark:text-green-400', modal: 'health-card' },
           ].map(({ icon: Icon, label, sub, color, ic, modal }, i, arr) => (
             <React.Fragment key={label}>
               <button
@@ -729,8 +781,8 @@ export default function Settings() {
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
           <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3.5 pt-3 pb-1">{t('securityLegal')}</p>
           {[
-            { icon: Shield, label: 'Data Privacy', sub: 'How we protect your data', color: 'bg-green-50 dark:bg-green-950/40', ic: 'text-green-600 dark:text-green-400', modal: 'privacy' },
-            { icon: HelpCircle, label: 'Help & FAQ', sub: 'Common questions answered', color: 'bg-violet-50 dark:bg-violet-950/40', ic: 'text-violet-600 dark:text-violet-400', modal: 'help' },
+            { icon: Shield, label: visible.privacy, sub: ui.privacySub, color: 'bg-green-50 dark:bg-green-950/40', ic: 'text-green-600 dark:text-green-400', modal: 'privacy' },
+            { icon: HelpCircle, label: visible.help, sub: ui.helpSub, color: 'bg-violet-50 dark:bg-violet-950/40', ic: 'text-violet-600 dark:text-violet-400', modal: 'help' },
           ].map(({ icon: Icon, label, sub, color, ic, modal }, i, arr) => (
             <React.Fragment key={label}>
               <button
@@ -756,14 +808,14 @@ export default function Settings() {
         {/* App info */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 text-center space-y-1">
           <p className="text-sm font-bold text-gray-900 dark:text-white">Raksha Setu</p>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500">Version 1.0.0 · Made for India 🇮🇳</p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500">Built on Ayushman Bharat Digital Mission (ABDM)</p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500">Data powered by NHA · NIC · Government of India</p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500">{ui.footerVersion}</p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">{ui.footerMission}</p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">{ui.footerData}</p>
         </div>
 
         {/* Sign out */}
         <button className="w-full flex items-center justify-center gap-2 text-sm font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 rounded-xl py-3 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors">
-          <LogOut size={16} /> Sign Out
+          <LogOut size={16} /> {ui.signOut}
         </button>
       </div>
     </div>

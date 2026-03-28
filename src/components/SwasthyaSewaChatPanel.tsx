@@ -294,6 +294,14 @@ function containsIndicScript(text: string) {
   return /[\u0900-\u0D7F]/.test(text);
 }
 
+type ApproximateLocation = {
+  lat: number;
+  lng: number;
+  city?: string;
+  region?: string;
+  country?: string;
+};
+
 function sanitizeAssistantActionData(value: unknown): AssistantActionData | undefined {
   if (!value || typeof value !== 'object') return undefined;
 
@@ -434,6 +442,26 @@ export default function SwasthyaSewaChatPanel({ className }: { className?: strin
     return promise;
   }, [dataset]);
 
+  const fetchApproximateLocation = useCallback(async (): Promise<ApproximateLocation | null> => {
+    try {
+      const response = await fetch('/api/location/approx');
+      if (!response.ok) return null;
+      const data = await response.json() as Partial<ApproximateLocation>;
+      if (typeof data.lat !== 'number' || typeof data.lng !== 'number') {
+        return null;
+      }
+      return {
+        lat: data.lat,
+        lng: data.lng,
+        city: data.city,
+        region: data.region,
+        country: data.country,
+      };
+    } catch {
+      return null;
+    }
+  }, []);
+
   const openBooking = useCallback((facility: HealthFacility, slot: AssistantSlotOption) => {
     setBookingFlow({ stage: 'idle' });
     setBookingFacility(facility);
@@ -507,6 +535,33 @@ export default function SwasthyaSewaChatPanel({ className }: { className?: strin
         }, true);
         return;
       } catch {
+        const approximate = await fetchApproximateLocation();
+        if (approximate) {
+          const coords = { lat: approximate.lat, lng: approximate.lng };
+          setLastCoords(coords);
+          const facilities = (await ensureDataset())
+            .map((facility) => ({ ...facility, distanceKm: haversine(coords.lat, coords.lng, facility.lat, facility.lng) }))
+            .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity))
+            .slice(0, 5);
+          if (facilities.length) {
+            setBookingFlow({ stage: 'awaiting_center', facilities });
+            appendAssistant(bookingUi.chooseHospital, {
+              intent: 'BOOK_APPOINTMENT',
+              actionData: {
+                centers: facilities.map((facility) => ({
+                  id: facility.id,
+                  name: facility.name,
+                  address: facility.address,
+                  distance: facility.distanceKm != null ? formatDistance(facility.distanceKm) : undefined,
+                  type: facility.facilityType || facility.type,
+                  cost: facility.isFree ? centersUi.free : centersUi.paid,
+                })),
+              },
+            }, true);
+            return;
+          }
+        }
+
         appendAssistant(bookingUi.locationBlocked, {}, true);
         return;
       }
@@ -532,7 +587,7 @@ export default function SwasthyaSewaChatPanel({ className }: { className?: strin
         })),
       },
     }, true);
-  }, [appendAssistant, bookingUi.chooseHospital, bookingUi.locationBlocked, bookingUi.noHospitals, bookingUi.noLocation, bookingUi.searching, centersUi.free, centersUi.paid, ensureDataset, findByQuery]);
+  }, [appendAssistant, bookingUi.chooseHospital, bookingUi.locationBlocked, bookingUi.noHospitals, bookingUi.noLocation, bookingUi.searching, centersUi.free, centersUi.paid, ensureDataset, fetchApproximateLocation, findByQuery]);
 
   const handleFacilityChoice = useCallback(async (facilityId: string) => {
     const facilities = bookingFlow.stage === 'awaiting_center' ? bookingFlow.facilities : await ensureDataset();

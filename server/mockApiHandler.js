@@ -492,6 +492,149 @@ function stripCodeFence(text) {
         .replace(/\s*```$/i, "")
         .trim();
 }
+function getRequestHeader(req, headerName) {
+    const headers = req.headers;
+    if (!headers || typeof headers !== "object")
+        return null;
+    const target = headerName.toLowerCase();
+    for (const [key, rawValue] of Object.entries(headers)) {
+        if (key.toLowerCase() !== target)
+            continue;
+        if (Array.isArray(rawValue)) {
+            return rawValue.find((value) => typeof value === "string" && value.trim())?.trim() ?? null;
+        }
+        return typeof rawValue === "string" && rawValue.trim() ? rawValue.trim() : null;
+    }
+    return null;
+}
+function getClientIp(req) {
+    const forwardedFor = getRequestHeader(req, "x-forwarded-for");
+    if (forwardedFor) {
+        const forwardedIp = forwardedFor
+            .split(",")
+            .map((part) => part.trim())
+            .find(Boolean);
+        if (forwardedIp) {
+            return forwardedIp.replace(/^\[|\]$/g, "");
+        }
+    }
+    const directIp = getRequestHeader(req, "x-real-ip")
+        || getRequestHeader(req, "cf-connecting-ip")
+        || getRequestHeader(req, "x-vercel-forwarded-for");
+    return directIp ? directIp.replace(/^\[|\]$/g, "") : null;
+}
+function isPrivateIp(ip) {
+    if (!ip)
+        return true;
+    const normalized = ip.trim().toLowerCase();
+    if (!normalized)
+        return true;
+    return normalized === "127.0.0.1"
+        || normalized === "::1"
+        || normalized.startsWith("10.")
+        || normalized.startsWith("192.168.")
+        || /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalized)
+        || normalized.startsWith("fc")
+        || normalized.startsWith("fd");
+}
+async function fetchApproximateLocationFromIp(req) {
+    const clientIp = getClientIp(req);
+    const lookupTargets = [
+        !isPrivateIp(clientIp) ? `https://reallyfreegeoip.org/json/${encodeURIComponent(clientIp)}` : null,
+        "https://reallyfreegeoip.org/json/",
+        !isPrivateIp(clientIp) ? `https://ipwho.is/${encodeURIComponent(clientIp)}` : null,
+        "https://ipwho.is/",
+    ].filter((value) => Boolean(value));
+    for (const endpoint of lookupTargets) {
+        try {
+            const response = await fetch(endpoint, {
+                headers: {
+                    Accept: "application/json",
+                },
+            });
+            if (!response.ok)
+                continue;
+            const payload = await response.json();
+            const lat = typeof payload.latitude === "number" ? payload.latitude : null;
+            const lng = typeof payload.longitude === "number" ? payload.longitude : null;
+            if (lat == null || lng == null)
+                continue;
+            if (typeof payload.success === "boolean" && !payload.success)
+                continue;
+            return {
+                lat,
+                lng,
+                city: payload.city || undefined,
+                region: payload.region || payload.region_name || undefined,
+                country: payload.country || payload.country_name || undefined,
+            };
+        }
+        catch {
+            // Try the next provider target.
+        }
+    }
+    return null;
+}
+async function transcribeAudioWithGemini(input) {
+    if (!GEMINI_API_KEY)
+        return null;
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            {
+                                text: [
+                                    "Transcribe this audio exactly.",
+                                    "Keep the same spoken language and script.",
+                                    "Do not translate, summarize, explain, or label the answer.",
+                                    "Return strict JSON only with the single key transcript.",
+                                    `Expected language code: ${input.languageCode}.`,
+                                ].join(" "),
+                            },
+                            {
+                                inlineData: {
+                                    mimeType: input.mimeType,
+                                    data: input.audioBase64,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                generationConfig: {
+                    temperature: 0,
+                    responseMimeType: "application/json",
+                },
+            }),
+        });
+        if (!response.ok) {
+            return null;
+        }
+        const payload = await response.json();
+        const text = payload.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("").trim();
+        if (!text)
+            return null;
+        try {
+            const parsed = JSON.parse(stripCodeFence(text));
+            if (typeof parsed.transcript === "string" && parsed.transcript.trim()) {
+                return parsed.transcript.trim();
+            }
+        }
+        catch {
+            // Fall back to plain-text extraction below.
+        }
+        return stripCodeFence(text);
+    }
+    catch {
+        return null;
+    }
+}
 function coerceAssistantIntent(value, fallback) {
     const allowed = [
         "BOOK_APPOINTMENT",
@@ -641,6 +784,36 @@ export async function handleApiRequest(req, res) {
     }
     const method = (req.method ?? "GET").toUpperCase();
     const db = readDb();
+    if (method === "POST" && pathname === "/api/voice/stt") {
+        const body = (await parseBody(req));
+        const audioBase64 = body.audioBase64?.trim();
+        if (!audioBase64) {
+            sendJson(res, { error: "Audio is required" }, 400);
+            return;
+        }
+        const mimeType = body.mimeType?.trim() || "audio/webm";
+        const languageCode = body.languageCode?.trim() || "en-IN";
+        const transcript = await transcribeAudioWithGemini({
+            audioBase64,
+            mimeType,
+            languageCode,
+        });
+        if (!transcript) {
+            sendJson(res, { error: "Speech transcription is unavailable right now" }, GEMINI_API_KEY ? 502 : 503);
+            return;
+        }
+        sendJson(res, { transcript });
+        return;
+    }
+    if (method === "GET" && pathname === "/api/location/approx") {
+        const approximateLocation = await fetchApproximateLocationFromIp(req);
+        if (!approximateLocation) {
+            sendJson(res, { error: "Approximate location is unavailable right now" }, 502);
+            return;
+        }
+        sendJson(res, approximateLocation);
+        return;
+    }
     if ((method === "POST" || method === "GET") && pathname === "/api/voice/tts") {
         const searchText = url?.searchParams.get("text")?.trim();
         const searchLanguageCode = url?.searchParams.get("languageCode")?.trim();
